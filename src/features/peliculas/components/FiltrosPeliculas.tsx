@@ -1,4 +1,5 @@
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -14,23 +15,42 @@ interface Props {
   onOrden: (orden: Orden) => void
 }
 
-// TODO M3: recibir también busqueda y onBuscar
-export function FiltrosPeliculas({ genero, orden, generos, onGenero, onOrden }: Props) {
-  // TODO M3: el texto del input en su propio useState (input controlado)
-  // TODO M3: enviar(e): e.preventDefault() y avisar al padre con onBuscar(texto.trim())
+export function FiltrosPeliculas({ busqueda, genero, orden, generos, onBuscar, onGenero, onOrden }: Props) {
+  // M3 · Lo que se está escribiendo vive aquí; la búsqueda "oficial" vive en el padre.
+  // Así no se busca en cada tecla, solo al enviar.
+  const [texto, setTexto] = useState(busqueda)
+
+  function enviar(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault() // sin esto, el navegador recarga la página
+    onBuscar(texto.trim())
+  }
+
+  function limpiar() {
+    setTexto('')
+    onBuscar('')
+  }
 
   // TMDB no deja combinar búsqueda por texto con género u orden
-  const buscando = false // TODO M3: busqueda !== ''
+  const buscando = busqueda !== ''
 
   return (
     <div className="mb-8 flex flex-wrap items-end gap-3">
-      {/* TODO M3: onSubmit={enviar} */}
-      <form onSubmit={(e) => e.preventDefault()} className="flex min-w-64 flex-1 gap-2" role="search">
+      <form onSubmit={enviar} className="flex min-w-64 flex-1 gap-2" role="search">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          {/* TODO M3: value={texto} y onChange */}
-          <Input placeholder="Buscar por título…" aria-label="Buscar película" className="pl-9" />
-          {/* TODO M3: botón X para limpiar, solo si hay texto */}
+          {/* M3 · Input CONTROLADO: value viene del estado y onChange lo actualiza en cada tecla */}
+          <Input
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Buscar por título…"
+            aria-label="Buscar película"
+            className="pl-9"
+          />
+          {texto && (
+            <button type="button" onClick={limpiar} aria-label="Limpiar búsqueda" className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="size-4" />
+            </button>
+          )}
         </div>
         <Button type="submit">Buscar</Button>
       </form>
