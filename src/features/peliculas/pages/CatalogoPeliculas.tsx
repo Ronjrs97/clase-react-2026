@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { EsqueletoGrilla } from '@/shared/components/EsqueletoGrilla'
 import { EstadoVacio } from '@/shared/components/EstadoVacio'
 import { MensajeError } from '@/shared/components/MensajeError'
-import type { Pagina } from '@/shared/models/pagina'
+import { Paginador } from '@/shared/components/Paginador'
+import { MAX_PAGINAS, type Pagina } from '@/shared/models/pagina'
 import { FiltrosPeliculas } from '../components/FiltrosPeliculas'
 import { GrillaPeliculas } from '../components/GrillaPeliculas'
-import type { Pelicula, PeliculaResumen } from '../models/pelicula'
-import { buscar, descubrir } from '../services/peliculas.service'
+import type { Genero, Orden, Pelicula, PeliculaResumen } from '../models/pelicula'
+import { buscar, descubrir, obtenerGeneros } from '../services/peliculas.service'
 
 interface Props {
   esFavorita: (id: number) => boolean
@@ -19,16 +20,19 @@ const formato = new Intl.NumberFormat('es-VE')
 
 // Página CONTENEDORA: aquí viven el estado, las peticiones y las decisiones.
 export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
+  // M5 · Estado de los filtros: cada useState es una memoria independiente
   const [busqueda, setBusqueda] = useState('')
+  const [genero, setGenero] = useState<number>()
+  const [orden, setOrden] = useState<Orden>('popularity.desc')
+  const [pagina, setPagina] = useState(1)
 
-  // M4 · Estado de la petición: los datos, si está cargando y si falló
+  // M4 · Estado de la petición
   const [respuesta, setRespuesta] = useState<Pagina<Pelicula> | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [intento, setIntento] = useState(0) // "Reintentar" lo sube y el efecto vuelve a correr
+  const [intento, setIntento] = useState(0)
+  const [generos, setGeneros] = useState<Genero[]>([])
 
-  // M4 · useEffect: "después de pintar, sincronízate con la API".
-  // Se vuelve a ejecutar cada vez que cambia algo del arreglo de dependencias.
   useEffect(() => {
     const control = new AbortController()
 
@@ -36,10 +40,11 @@ export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
       setCargando(true)
       setError(null)
       try {
-        const datos = busqueda ? await buscar(busqueda, 1, control.signal) : await descubrir({ pagina: 1 }, control.signal)
+        const datos = busqueda
+          ? await buscar(busqueda, pagina, control.signal)
+          : await descubrir({ pagina, genero, orden }, control.signal)
         setRespuesta(datos)
       } catch (e) {
-        // Si la cancelamos nosotros (ver la limpieza), no es un error real
         if (!axios.isCancel(e)) setError((e as Error).message)
       } finally {
         if (!control.signal.aborted) setCargando(false)
@@ -47,11 +52,38 @@ export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
     }
     cargar()
 
-    // Limpieza: si la búsqueda cambia antes de que llegue la respuesta, cancelamos la vieja
     return () => control.abort()
-  }, [busqueda, intento])
+  }, [busqueda, genero, orden, pagina, intento]) // M5: cualquier filtro dispara otra petición
 
-  // TODO M5: useState para género, orden y página. Al cambiar un filtro, volver a la página 1
+  // M5 · Los géneros se piden UNA vez: arreglo de dependencias vacío
+  useEffect(() => {
+    const control = new AbortController()
+    obtenerGeneros(control.signal)
+      .then(setGeneros)
+      .catch(() => {}) // si fallan, el select solo muestra "Todos"
+    return () => control.abort()
+  }, [])
+
+  // Al cambiar un filtro volvemos a la página 1. Se hace en el manejador del evento, NO en un efecto.
+  function cambiarBusqueda(texto: string) {
+    setBusqueda(texto)
+    setPagina(1)
+  }
+  function cambiarGenero(g: number | undefined) {
+    setGenero(g)
+    setPagina(1)
+  }
+  function cambiarOrden(o: Orden) {
+    setOrden(o)
+    setPagina(1)
+  }
+  function irAPagina(nueva: number) {
+    setPagina(nueva)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Dato derivado: TMDB no deja pasar de la página 500
+  const totalPaginas = Math.min(respuesta?.total_pages ?? 0, MAX_PAGINAS)
 
   return (
     <section>
@@ -64,12 +96,12 @@ export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
 
       <FiltrosPeliculas
         busqueda={busqueda}
-        genero={undefined}
-        orden="popularity.desc"
-        generos={[]}
-        onBuscar={setBusqueda}
-        onGenero={() => {}}
-        onOrden={() => {}}
+        genero={genero}
+        orden={orden}
+        generos={generos}
+        onBuscar={cambiarBusqueda}
+        onGenero={cambiarGenero}
+        onOrden={cambiarOrden}
       />
 
       {/* Una vista distinta para cada estado de la petición */}
@@ -85,6 +117,7 @@ export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
         // Mientras llega lo nuevo, lo anterior se ve atenuado
         <div className={cargando ? 'opacity-50 transition-opacity' : 'transition-opacity'}>
           <GrillaPeliculas peliculas={respuesta.results} esFavorita={esFavorita} onFavorito={onFavorito} />
+          <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={irAPagina} />
         </div>
       )}
     </section>
