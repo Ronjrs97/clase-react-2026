@@ -1,15 +1,14 @@
-import axios from 'axios'
 import { SearchX } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { EsqueletoGrilla } from '@/shared/components/EsqueletoGrilla'
 import { EstadoVacio } from '@/shared/components/EstadoVacio'
 import { MensajeError } from '@/shared/components/MensajeError'
 import { Paginador } from '@/shared/components/Paginador'
-import { MAX_PAGINAS, type Pagina } from '@/shared/models/pagina'
+import { MAX_PAGINAS } from '@/shared/models/pagina'
 import { FiltrosPeliculas } from '../components/FiltrosPeliculas'
 import { GrillaPeliculas } from '../components/GrillaPeliculas'
-import type { Genero, Orden, Pelicula, PeliculaResumen } from '../models/pelicula'
-import { buscar, descubrir, obtenerGeneros } from '../services/peliculas.service'
+import { useGeneros, usePeliculas } from '../hooks/usePeliculas'
+import type { Orden, PeliculaResumen } from '../models/pelicula'
 
 interface Props {
   esFavorita: (id: number) => boolean
@@ -18,51 +17,16 @@ interface Props {
 
 const formato = new Intl.NumberFormat('es-VE')
 
-// Página CONTENEDORA: aquí viven el estado, las peticiones y las decisiones.
+// Página CONTENEDORA. Ya no sabe de efectos, AbortController ni Axios: solo decide QUÉ mostrar.
 export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
-  // M5 · Estado de los filtros: cada useState es una memoria independiente
   const [busqueda, setBusqueda] = useState('')
   const [genero, setGenero] = useState<number>()
   const [orden, setOrden] = useState<Orden>('popularity.desc')
   const [pagina, setPagina] = useState(1)
 
-  // M4 · Estado de la petición
-  const [respuesta, setRespuesta] = useState<Pagina<Pelicula> | null>(null)
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [intento, setIntento] = useState(0)
-  const [generos, setGeneros] = useState<Genero[]>([])
-
-  useEffect(() => {
-    const control = new AbortController()
-
-    async function cargar() {
-      setCargando(true)
-      setError(null)
-      try {
-        const datos = busqueda
-          ? await buscar(busqueda, pagina, control.signal)
-          : await descubrir({ pagina, genero, orden }, control.signal)
-        setRespuesta(datos)
-      } catch (e) {
-        if (!axios.isCancel(e)) setError((e as Error).message)
-      } finally {
-        if (!control.signal.aborted) setCargando(false)
-      }
-    }
-    cargar()
-
-    return () => control.abort()
-  }, [busqueda, genero, orden, pagina, intento]) // M5: cualquier filtro dispara otra petición
-
-  // M5 · Los géneros se piden UNA vez: arreglo de dependencias vacío
-  useEffect(() => {
-    const control = new AbortController()
-    obtenerGeneros(control.signal)
-      .then(setGeneros)
-      .catch(() => {}) // si fallan, el select solo muestra "Todos"
-    return () => control.abort()
-  }, [])
+  // M6 · Los dos useEffect y los cuatro useState de la petición quedaron en dos líneas
+  const { datos: respuesta, error, cargando, reintentar } = usePeliculas({ busqueda, genero, orden, pagina })
+  const generos = useGeneros()
 
   // Al cambiar un filtro volvemos a la página 1. Se hace en el manejador del evento, NO en un efecto.
   function cambiarBusqueda(texto: string) {
@@ -106,7 +70,7 @@ export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
 
       {/* Una vista distinta para cada estado de la petición */}
       {error ? (
-        <MensajeError mensaje={error} onReintentar={() => setIntento(intento + 1)} />
+        <MensajeError mensaje={error} onReintentar={reintentar} />
       ) : !respuesta ? (
         <EsqueletoGrilla />
       ) : respuesta.results.length === 0 ? (
