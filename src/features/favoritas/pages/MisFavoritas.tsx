@@ -1,11 +1,13 @@
 import { Heart } from 'lucide-react'
+import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { useFavoritas } from '@/core/favoritas/favoritas-context'
 import { GrillaPeliculas } from '@/features/peliculas/components/GrillaPeliculas'
 import { EstadoVacio } from '@/shared/components/EstadoVacio'
 
-// M7 · Otra feature leyendo el mismo estado global, sin que App se lo pase
-export function MisFavoritas({ onIrAlCatalogo }: { onIrAlCatalogo: () => void }) {
+// M7 · Otra feature leyendo el mismo estado global, sin que nadie se lo pase
+// M8 · Ya no recibe props: para volver al catálogo basta un Link
+export function MisFavoritas() {
   const { favoritas } = useFavoritas()
 
   return (
@@ -15,8 +17,8 @@ export function MisFavoritas({ onIrAlCatalogo }: { onIrAlCatalogo: () => void })
 
       {favoritas.length === 0 ? (
         <EstadoVacio icono={Heart} titulo="Todavía no marcas ninguna película">
-          <Button variant="outline" onClick={onIrAlCatalogo}>
-            Ir al catálogo
+          <Button variant="outline" asChild>
+            <Link to="/peliculas">Ir al catálogo</Link>
           </Button>
         </EstadoVacio>
       ) : (

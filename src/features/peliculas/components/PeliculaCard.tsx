@@ -1,4 +1,5 @@
 import { Film } from 'lucide-react'
+import { Link } from 'react-router'
 import { imagen } from '@/core/config/tmdb'
 import { anio, type PeliculaResumen } from '../models/pelicula'
 import { BotonFavorito } from './BotonFavorito'
@@ -18,7 +19,8 @@ export function PeliculaCard({ pelicula, favorita, onFavorito }: Props) {
 
   return (
     <article className="group relative">
-      <div>
+      {/* M8 · Link navega sin recargar la página (nunca <a href> para rutas propias) */}
+      <Link to={`/peliculas/${pelicula.id}`} viewTransition className="block">
         <div className="aspect-2/3 overflow-hidden rounded-xl bg-card ring-1 ring-border transition group-hover:ring-primary/60">
           {/* Ternario en JSX: imagen si hay póster, ícono si no */}
           {poster ? (
@@ -42,7 +44,7 @@ export function PeliculaCard({ pelicula, favorita, onFavorito }: Props) {
           {/* && : si no hay votos, no se pinta nada */}
           {pelicula.vote_average > 0 && <Calificacion valor={pelicula.vote_average} />}
         </div>
-      </div>
+      </Link>
 
       {/* M1: onAlternar recibe una FUNCIÓN. () => onFavorito(pelicula), nunca onFavorito(pelicula) a secas */}
       <BotonFavorito activo={favorita} onAlternar={() => onFavorito(pelicula)} className="absolute top-2 right-2" />
