@@ -1,17 +1,20 @@
 import { Clapperboard, Heart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useFavoritas } from '@/core/favoritas/favoritas-context'
 
 export type Vista = 'catalogo' | 'favoritas'
 
 interface Props {
   vista: Vista
-  totalFavoritas: number
   onCambiarVista: (vista: Vista) => void
 }
 
-// Componente de presentación: no guarda nada, todo le llega por props y avisa con onCambiarVista
-export function Header({ vista, totalFavoritas, onCambiarVista }: Props) {
+export function Header({ vista, onCambiarVista }: Props) {
+  // M7: el total ya no llega por props, se lee del contexto
+  const { favoritas } = useFavoritas()
+  const totalFavoritas = favoritas.length
+
   return (
     <header className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-6 py-4">

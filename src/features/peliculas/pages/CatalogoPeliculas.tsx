@@ -8,17 +8,13 @@ import { MAX_PAGINAS } from '@/shared/models/pagina'
 import { FiltrosPeliculas } from '../components/FiltrosPeliculas'
 import { GrillaPeliculas } from '../components/GrillaPeliculas'
 import { useGeneros, usePeliculas } from '../hooks/usePeliculas'
-import type { Orden, PeliculaResumen } from '../models/pelicula'
-
-interface Props {
-  esFavorita: (id: number) => boolean
-  onFavorito: (pelicula: PeliculaResumen) => void
-}
+import type { Orden } from '../models/pelicula'
 
 const formato = new Intl.NumberFormat('es-VE')
 
 // Página CONTENEDORA. Ya no sabe de efectos, AbortController ni Axios: solo decide QUÉ mostrar.
-export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
+// M7: ya no recibe props. Las favoritas las lee la grilla del contexto.
+export function CatalogoPeliculas() {
   const [busqueda, setBusqueda] = useState('')
   const [genero, setGenero] = useState<number>()
   const [orden, setOrden] = useState<Orden>('popularity.desc')
@@ -80,7 +76,7 @@ export function CatalogoPeliculas({ esFavorita, onFavorito }: Props) {
       ) : (
         // Mientras llega lo nuevo, lo anterior se ve atenuado
         <div className={cargando ? 'opacity-50 transition-opacity' : 'transition-opacity'}>
-          <GrillaPeliculas peliculas={respuesta.results} esFavorita={esFavorita} onFavorito={onFavorito} />
+          <GrillaPeliculas peliculas={respuesta.results} />
           <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={irAPagina} />
         </div>
       )}
