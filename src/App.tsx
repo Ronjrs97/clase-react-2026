@@ -1,8 +1,5 @@
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { Header, type Vista } from '@/core/layout/Header'
 import { MisFavoritas } from '@/features/favoritas/pages/MisFavoritas'
-import type { PeliculaResumen } from '@/features/peliculas/models/pelicula'
 import { CatalogoPeliculas } from '@/features/peliculas/pages/CatalogoPeliculas'
 import { useState } from 'react'
 import type { PeliculaResumen } from './features/peliculas/models/pelicula'
