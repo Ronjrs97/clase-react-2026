@@ -7,9 +7,9 @@ interface Props {
   onFavorito: (pelicula: PeliculaResumen) => void
 }
 
-// Listas: .map() convierte cada dato en un elemento JSX.
-// `key` le dice a React cuál es cuál entre renders (como track en @for). Usa el id, nunca el índice.
-// Ojo: la grilla recibe onFavorito solo para pasárselo a la tarjeta. Eso es "prop drilling" (lo arreglamos en M7).
+//* Listas: .map() convierte cada dato en un elemento JSX.
+//* `key` le dice a React cuál es cuál entre renders (como track en @for). Usa el id, nunca el índice.
+//* Ojo: la grilla recibe onFavorito solo para pasárselo a la tarjeta. Eso es "prop drilling" (lo arreglamos en M7).
 export function GrillaPeliculas({ peliculas, esFavorita, onFavorito }: Props) {
   return (
     <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
