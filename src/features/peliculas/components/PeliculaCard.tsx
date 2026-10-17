@@ -11,8 +11,8 @@ interface Props {
   onFavorito: (pelicula: PeliculaResumen) => void
 }
 
-//* Componente de presentación: todo le llega por props; no pide datos ni tiene estado.
-//* Lo que en Angular era output(), aquí es una función que llega como prop (onFavorito).
+// Componente de presentación: todo le llega por props; no pide datos ni tiene estado.
+// Lo que en Angular era output(), aquí es una función que llega como prop (onFavorito).
 export function PeliculaCard({ pelicula, favorita, onFavorito }: Props) {
   const poster = imagen(pelicula.poster_path)
 
@@ -44,6 +44,7 @@ export function PeliculaCard({ pelicula, favorita, onFavorito }: Props) {
         </div>
       </div>
 
+      {/* M1: onAlternar recibe una FUNCIÓN. () => onFavorito(pelicula), nunca onFavorito(pelicula) a secas */}
       <BotonFavorito activo={favorita} onAlternar={() => onFavorito(pelicula)} className="absolute top-2 right-2" />
     </article>
   )
